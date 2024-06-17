@@ -1,3 +1,4 @@
+--author:大相great-xiang,date:2024.06.17
 random_location = {
     target_factions = {},
     capital_regions = {},
