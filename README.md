@@ -1,3 +1,4 @@
+![random_location](random_location.png "random_location")
 # total_war_3k_random_location
 这是全面战争三国的所有派系随机开局地盘的lua脚本
 steam上有可订阅的mod,mod link:https://steamcommunity.com/sharedfiles/filedetails/?id=3269436084
