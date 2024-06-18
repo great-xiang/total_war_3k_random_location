@@ -159,7 +159,6 @@ function random_location:Initialise()
                     cm:modify_region(filter_region):settlement_gifted_as_if_by_payload(cm:modify_faction(rebel_faction));
                 end;
             end);
-            --cm:modify_region("3k_dlc06_san_pass"):settlement_gifted_as_if_by_payload(cm:modify_faction(empire_faction));
 
             -- disperse give faction/ rebel faction 's army
             local public_factions = {};
