@@ -47,7 +47,7 @@ random_location = {
         }
     },
 
-    give_factions = {
+    empire_factions = {
         ["3k_main_campaign_map"] = "3k_main_faction_han_empire",
         ["3k_dlc05_start_pos"] = "3k_main_faction_han_empire",
         ["8p_start_pos"] = "ep_faction_empire_of_jin"
@@ -88,16 +88,16 @@ function random_location:Initialise()
         function()
             --------------------------------------------------------
             -- set give away faction, rebel faction and skip faction
-            local give_faction = self.give_factions[cm:query_model():campaign_name()];
+            local empire_faction = self.empire_factions[cm:query_model():campaign_name()];
             local rebel_faction = self.rebel_factions[cm:query_model():campaign_name()];
             local skip_faction = self.skip_factions[cm:query_model():campaign_name()];
-            ModLog("give_faction: " .. give_faction);
-            ModLog("rebel_faction: " .. rebel_faction);
-            ModLog("skip_faction: " .. skip_faction);
-
+            -- ModLog("empire_faction: " .. empire_faction);
+            -- ModLog("rebel_faction: " .. rebel_faction);
+            -- ModLog("skip_faction: " .. skip_faction);
             --  go through factions and prepare armies
             cm:query_model():world():faction_list():foreach(function(filter_faction)
-                if not table.contains(self.invalid_factions, filter_faction:name()) and not filter_faction:is_dead() then
+                if not table.contains(self.invalid_factions, filter_faction:name()) and skip_faction ~= filter_faction:name() 
+                and not filter_faction:is_dead()then
                     table.insert(self.target_factions, filter_faction:name())
                 end
                 if not filter_faction:is_dead() and filter_faction:military_force_list():is_empty() then
@@ -111,7 +111,7 @@ function random_location:Initialise()
                 return not table.contains(self.prohibited_regions[cm:query_model():campaign_name()], filter_region:name())
             end):foreach(function(filter_region)
                 cm:modify_model():get_modify_region(filter_region):settlement_gifted_as_if_by_payload(cm:modify_faction(
-                    give_faction));
+                    empire_faction));
                 if not table.contains(self.pass_regions, filter_region:name()) then
                     if filter_region:is_province_capital() then
                         table.insert(self.capital_regions, filter_region:name());
@@ -121,19 +121,19 @@ function random_location:Initialise()
                 end;
             end);
 
-            -- allocate capital_regions for factions
-            ModLog("allocate capital_regions for factions")
+            -- allocate regions for factions
+            -- ModLog("allocate capital_regions for factions")
             for k, faction_key in ipairs(self.target_factions) do
-                ModLog("Processing faction: " .. tostring(faction_key))
-                self:SetRandomRegion(faction_key, give_faction);
+                -- ModLog("Processing faction: " .. tostring(faction_key))
+                self:SetRandomRegion(faction_key, empire_faction);
                 self:MoveArmy(faction_key);
             end;
 
 
             -- Allocate entire province to factions
-            ModLog("Allocating entire commandery to factions")
+            -- ModLog("Allocating entire commandery to factions")
             for k, faction_key in ipairs(self.target_factions) do
-                ModLog("Processing faction: " .. tostring(faction_key))
+                -- ModLog("Processing faction: " .. tostring(faction_key))
                 local faction = self:get_faction_by_name(faction_key)
                 -- find captial's resources
                 local resource_points = {}
@@ -144,25 +144,26 @@ function random_location:Initialise()
                 end)
                 for _, minor_region_name in pairs(resource_points) do
                     if table.contains(self.minor_regions, minor_region_name) then
-                        ModLog("Assigning region " .. minor_region_name .. " to faction " .. faction_key)
+                        -- ModLog("Assigning region " .. minor_region_name .. " to faction " .. faction_key)
                         cm:modify_region(cm:query_region(minor_region_name)):settlement_gifted_as_if_by_payload(
                             cm:modify_faction(faction_key))
                         self:remove_table_value(self.minor_regions, minor_region_name)
                     end
                 end
             end
-
-            -- transfer give away region to rebel region
-            cm:query_faction(give_faction):region_list():foreach(function(filter_region)
+            
+            -- give 2/3 region to rebel region
+            cm:query_faction(empire_faction):region_list():foreach(function(filter_region)
                 local rebel_check = cm:random_int(1, 3);
                 if rebel_check > 1 and filter_region:name() ~= "3k_main_luoyang_capital" then
                     cm:modify_region(filter_region):settlement_gifted_as_if_by_payload(cm:modify_faction(rebel_faction));
                 end;
             end);
+            --cm:modify_region("3k_dlc06_san_pass"):settlement_gifted_as_if_by_payload(cm:modify_faction(empire_faction));
 
             -- disperse give faction/ rebel faction 's army
             local public_factions = {};
-            table.insert(public_factions, give_faction);
+            table.insert(public_factions, empire_faction);
             table.insert(public_factions, rebel_faction);
             for k, public_faction in ipairs(public_factions) do
                 local query_faction = cm:query_faction(public_faction);
@@ -201,14 +202,14 @@ function random_location:Initialise()
             if duration > 0 then
                 cm:scroll_camera_from_current(duration, true, { new_capital_x, new_capital_y, 8, b, 10 });
             end;
-            ModLog("reset camera done!")
+            -- ModLog("reset camera done!")
             ---------------------------------------------------------
         end, false);
 end
 
-function random_location:SetRandomRegion(faction_key, give_faction)
-    ModLog("Capital regions count: " .. #self.capital_regions)
-    ModLog("Minor regions count: " .. #self.minor_regions)
+function random_location:SetRandomRegion(faction_key, empire_faction)
+    -- ModLog("Capital regions count: " .. #self.capital_regions)
+    -- ModLog("Minor regions count: " .. #self.minor_regions)
     if not table.is_empty(self.capital_regions) then
         target_region = self.capital_regions[cm:random_int(1, #self.capital_regions)];
         self:remove_table_value(self.capital_regions, target_region);
@@ -220,9 +221,9 @@ function random_location:SetRandomRegion(faction_key, give_faction)
     end
     if target_region then
         cm:modify_region(target_region):settlement_gifted_as_if_by_payload(cm:modify_faction(faction_key));
-        ModLog("give " .. target_region .. " to " .. give_faction);
+        -- ModLog("give " .. target_region .. " to " .. empire_faction);
     else
-        ModLog("Error: No regions available.");
+        -- ModLog("Error: No regions available.");
     end
 end
 
@@ -329,7 +330,7 @@ function random_location:RemoveMission()
     modify_filter_faction:complete_custom_mission("3k_dlc05_tutorial_mission_yan_baihu_construct_building");
     modify_filter_faction:complete_custom_mission("3k_dlc05_tutorial_mission_zheng_jiang_construct_building");
     modify_filter_faction:complete_custom_mission("3k_dlc06_progression_nanman_destroy_faction_mission");
-    ModLog("RemoveMission Done!");
+    -- ModLog("RemoveMission Done!");
 end
 
 function random_location:remove_table_value(tb, value)
